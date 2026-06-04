@@ -1,0 +1,25 @@
+{
+  "name": "diagnóstico-de-calidad-multi-norma",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:sustainable": "vite --mode sustainable",
+    "build": "vite build",
+    "build:sustainable": "vite build --mode sustainable --outDir dist-sustainable",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@google/genai": "^1.11.0",
+    "jspdf": "^4.2.1",
+    "html2canvas": "^1.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
