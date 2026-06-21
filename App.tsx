@@ -125,41 +125,173 @@ const LoginScreen: React.FC<{
   onPasswordChange: (value: string) => void;
   onSubmit: () => void;
   error: string;
-}> = ({ username, password, onUsernameChange, onPasswordChange, onSubmit, error }) => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-    <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200 p-8">
-      <h1 className="text-3xl font-extrabold text-cyan-700 mb-4">Ingreso Seguro</h1>
-      <p className="text-sm text-slate-500 mb-6">Ingrese su usuario y contraseña para acceder al sistema de diagnóstico.</p>
-      <label className="block mb-4">
-        <span className="text-sm font-medium text-slate-700">Usuario</span>
-        <input
-          value={username}
-          onChange={(e) => onUsernameChange(e.target.value)}
-          className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-          placeholder="user"
-        />
-      </label>
-      <label className="block mb-6">
-        <span className="text-sm font-medium text-slate-700">Contraseña</span>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => onPasswordChange(e.target.value)}
-          className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-          placeholder="pass"
-        />
-      </label>
-      {error && <p className="text-sm text-rose-600 mb-4">{error}</p>}
-      <button
-        onClick={onSubmit}
-        className="w-full rounded-xl bg-cyan-600 text-white font-semibold py-3 hover:bg-cyan-700 transition"
-      >
-        Iniciar sesión
-      </button>
-      <p className="text-xs text-slate-500 mt-4">Credenciales por defecto: usuario <strong>user</strong> y contraseña <strong>pass</strong>.</p>
+}> = ({ username, password, onUsernameChange, onPasswordChange, onSubmit, error }) => {
+  const [isRegister, setIsRegister] = useState(false);
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [regError, setRegError] = useState('');
+  const [regSuccess, setRegSuccess] = useState('');
+
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegError('');
+    setRegSuccess('');
+
+    if (!regUsername.trim() || !regPassword.trim() || !regConfirmPassword.trim()) {
+      setRegError('Por favor, complete todos los campos.');
+      return;
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      setRegError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    if (regUsername === 'user') {
+      setRegError('El nombre de usuario "user" está reservado.');
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const usersStr = localStorage.getItem('diagnosticoRegisteredUsers') || '[]';
+      let users = [];
+      try {
+        users = JSON.parse(usersStr);
+      } catch (err) {
+        users = [];
+      }
+
+      if (!Array.isArray(users)) {
+        users = [];
+      }
+
+      if (users.some((u: any) => u.username === regUsername)) {
+        setRegError('El usuario ya existe.');
+        return;
+      }
+
+      users.push({ username: regUsername, password: regPassword });
+      localStorage.setItem('diagnosticoRegisteredUsers', JSON.stringify(users));
+      setRegSuccess('¡Usuario registrado con éxito! Ya puede iniciar sesión.');
+      
+      // Auto-fill username on login and clear form
+      onUsernameChange(regUsername);
+      onPasswordChange('');
+      setRegUsername('');
+      setRegPassword('');
+      setRegConfirmPassword('');
+      setTimeout(() => {
+        setIsRegister(false);
+        setRegSuccess('');
+      }, 2000);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200 p-8">
+        {!isRegister ? (
+          <div>
+            <h1 className="text-3xl font-extrabold text-cyan-700 mb-2">Ingreso Seguro</h1>
+            <p className="text-sm text-slate-500 mb-6">Ingrese su usuario y contraseña para acceder al sistema de diagnóstico.</p>
+            <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
+              <label className="block mb-4">
+                <span className="text-sm font-medium text-slate-700">Usuario</span>
+                <input
+                  value={username}
+                  onChange={(e) => onUsernameChange(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  placeholder="user"
+                />
+              </label>
+              <label className="block mb-6">
+                <span className="text-sm font-medium text-slate-700">Contraseña</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => onPasswordChange(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  placeholder="pass"
+                />
+              </label>
+              {error && <p className="text-sm text-rose-600 mb-4">{error}</p>}
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-cyan-600 text-white font-semibold py-3 hover:bg-cyan-700 transition shadow-sm hover:shadow-md"
+              >
+                Iniciar sesión
+              </button>
+            </form>
+            <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col items-center gap-3">
+              <p className="text-sm text-slate-600">¿No tiene una cuenta?</p>
+              <button
+                onClick={() => { setIsRegister(true); setRegError(''); setRegSuccess(''); }}
+                className="text-cyan-600 font-semibold hover:text-cyan-800 transition"
+              >
+                Crear una cuenta (Registrarse)
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-6 text-center">Credenciales por defecto: usuario <strong>user</strong> y contraseña <strong>pass</strong>.</p>
+          </div>
+        ) : (
+          <div>
+            <h1 className="text-3xl font-extrabold text-cyan-700 mb-2">Crear Cuenta</h1>
+            <p className="text-sm text-slate-500 mb-6">Regístrese para acceder a la plataforma de diagnóstico.</p>
+            <form onSubmit={handleRegisterSubmit}>
+              <label className="block mb-4">
+                <span className="text-sm font-medium text-slate-700">Nuevo Usuario</span>
+                <input
+                  value={regUsername}
+                  onChange={(e) => setRegUsername(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  placeholder="Ingrese su usuario"
+                />
+              </label>
+              <label className="block mb-4">
+                <span className="text-sm font-medium text-slate-700">Contraseña</span>
+                <input
+                  type="password"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  placeholder="Mínimo 4 caracteres"
+                />
+              </label>
+              <label className="block mb-6">
+                <span className="text-sm font-medium text-slate-700">Confirmar Contraseña</span>
+                <input
+                  type="password"
+                  value={regConfirmPassword}
+                  onChange={(e) => setRegConfirmPassword(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                  placeholder="Repita su contraseña"
+                />
+              </label>
+              {regError && <p className="text-sm text-rose-600 mb-4">{regError}</p>}
+              {regSuccess && <p className="text-sm text-emerald-600 mb-4 font-semibold">{regSuccess}</p>}
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-emerald-600 text-white font-semibold py-3 hover:bg-emerald-700 transition shadow-sm hover:shadow-md"
+              >
+                Registrar usuario
+              </button>
+            </form>
+            <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col items-center gap-3">
+              <p className="text-sm text-slate-600">¿Ya tiene una cuenta?</p>
+              <button
+                onClick={() => setIsRegister(false)}
+                className="text-cyan-600 font-semibold hover:text-cyan-800 transition"
+              >
+                Volver al inicio de sesión
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ApiKeySettings: React.FC<{ apiKey: string; onChange: (value: string) => void; onSave: () => void; saved: boolean }> = ({ apiKey, onChange, onSave, saved }) => {
   const [isEditing, setIsEditing] = useState(!saved);
@@ -448,7 +580,27 @@ const App: React.FC = () => {
   };
 
   const handleLoginSubmit = () => {
+    let isValid = false;
     if (loginUsername === AUTH_CREDENTIALS.username && loginPassword === AUTH_CREDENTIALS.password) {
+      isValid = true;
+    } else if (typeof window !== 'undefined' && window.localStorage) {
+      const usersStr = localStorage.getItem('diagnosticoRegisteredUsers');
+      if (usersStr) {
+        try {
+          const users = JSON.parse(usersStr);
+          if (Array.isArray(users)) {
+            const foundUser = users.find(u => u.username === loginUsername && u.password === loginPassword);
+            if (foundUser) {
+              isValid = true;
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing registered users', e);
+        }
+      }
+    }
+
+    if (isValid) {
       setIsAuthenticated(true);
       setLoginError('');
       if (typeof window !== 'undefined' && window.localStorage) {
