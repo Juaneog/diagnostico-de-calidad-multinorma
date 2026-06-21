@@ -202,7 +202,7 @@ const LoginScreen: React.FC<{
                   value={username}
                   onChange={(e) => onUsernameChange(e.target.value)}
                   className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
-                  placeholder="user"
+                  placeholder="Ingrese su usuario"
                 />
               </label>
               <label className="block mb-6">
@@ -212,7 +212,7 @@ const LoginScreen: React.FC<{
                   value={password}
                   onChange={(e) => onPasswordChange(e.target.value)}
                   className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
-                  placeholder="pass"
+                  placeholder="Ingrese su contraseña"
                 />
               </label>
               {error && <p className="text-sm text-rose-600 mb-4">{error}</p>}
@@ -232,7 +232,6 @@ const LoginScreen: React.FC<{
                 Crear una cuenta (Registrarse)
               </button>
             </div>
-            <p className="text-[10px] text-slate-400 mt-6 text-center">Credenciales por defecto: usuario <strong>user</strong> y contraseña <strong>pass</strong>.</p>
           </div>
         ) : (
           <div>
