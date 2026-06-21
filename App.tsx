@@ -515,6 +515,7 @@ const App: React.FC = () => {
   // Results state
   const [results, setResults] = useState<IResults | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Chat state
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -835,8 +836,22 @@ const App: React.FC = () => {
   
   const handleSaveAndFinish = async () => {
       if (!demographics || !results) return;
-      await db.saveDiagnostic(demographics, results, comments, checklistAnswers, chatHistories);
-      handleBackToDashboard();
+      setIsSaving(true);
+      setError(null);
+      try {
+          const res = await db.saveDiagnostic(demographics, results, comments, checklistAnswers, chatHistories);
+          if (res) {
+              resetQuestionnaireState();
+              setStep('dashboard');
+          } else {
+              setError("No se pudo guardar el diagnóstico en la base de datos. Por favor, verifique la conexión con el servidor de base de datos e intente nuevamente.");
+          }
+      } catch (err) {
+          console.error("Error al guardar diagnóstico:", err);
+          setError("Ocurrió un error inesperado al intentar guardar el diagnóstico en el servidor.");
+      } finally {
+          setIsSaving(false);
+      }
   }
 
   // --- Handlers for Standard Details ---
@@ -1094,6 +1109,7 @@ const App: React.FC = () => {
                         onSaveAndFinish={handleSaveAndFinish}
                         error={error} 
                         onOpenClauseChat={handleOpenClauseChat}
+                        isSaving={isSaving}
                     />
                 </div>
             ) : null;

@@ -12,6 +12,7 @@ interface ResultsDisplayProps {
   onBackToHistory?: () => void;
   onOpenClauseChat: (context: IChatContext) => void;
   error?: string | null;
+  isSaving?: boolean;
 }
 
 const getBarColor = (percentage: number): string => {
@@ -149,7 +150,7 @@ const EvolutionSummary: React.FC<{ comparison: IComparisonData, currentPercentag
 };
 
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ mode, results, demographics, onSaveAndFinish, onBackToHistory, onOpenClauseChat, error }) => {
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ mode, results, demographics, onSaveAndFinish, onBackToHistory, onOpenClauseChat, error, isSaving }) => {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const overallBarColor = getBarColor(results.totalPercentage);
 
@@ -293,9 +294,10 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ mode, results, demograp
         {mode === 'new' && onSaveAndFinish && (
             <button
               onClick={onSaveAndFinish}
-              className="bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-colors duration-300"
+              disabled={isSaving}
+              className="bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-wait"
             >
-              Guardar y Finalizar
+              {isSaving ? 'Guardando...' : 'Guardar y Finalizar'}
             </button>
         )}
         {mode === 'view' && onBackToHistory && (
