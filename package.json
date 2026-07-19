@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:sustainable": "vite --mode sustainable",
     "build": "vite build",
+    "build:ntc6001": "vite build --mode ntc6001 --outDir dist-ntc6001",
     "build:sustainable": "vite build --mode sustainable --outDir dist-sustainable",
     "preview": "vite preview"
   },

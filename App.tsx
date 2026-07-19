@@ -6,6 +6,8 @@ import ResultsDisplay from './components/ResultsDisplay';
 import DemographicsForm from './components/DemographicsForm';
 import ChatModal from './components/ChatModal';
 import StandardDetailModal from './components/StandardDetailModal';
+import LandingPage from './components/LandingPage';
+import EscudoUnicordoba from './Escudo-unicordoba.png';
 import { generateActionPlan, generateChatResponse, generateActionPlanChatResponse, generateStandardChatResponse } from './services/aiService';
 import * as db from './services/dbService';
 import tutorialManualContent from './MANUAL_APP.md?raw';
@@ -125,7 +127,8 @@ const LoginScreen: React.FC<{
   onPasswordChange: (value: string) => void;
   onSubmit: () => void;
   error: string;
-}> = ({ username, password, onUsernameChange, onPasswordChange, onSubmit, error }) => {
+  onBackToLanding?: () => void;
+}> = ({ username, password, onUsernameChange, onPasswordChange, onSubmit, error, onBackToLanding }) => {
   const [isRegister, setIsRegister] = useState(false);
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -227,10 +230,19 @@ const LoginScreen: React.FC<{
               <p className="text-sm text-slate-600">¿No tiene una cuenta?</p>
               <button
                 onClick={() => { setIsRegister(true); setRegError(''); setRegSuccess(''); }}
-                className="text-cyan-600 font-semibold hover:text-cyan-800 transition"
+                className="text-cyan-600 font-semibold hover:text-cyan-800 transition text-sm"
               >
                 Crear una cuenta (Registrarse)
               </button>
+              {onBackToLanding && (
+                <button
+                  type="button"
+                  onClick={onBackToLanding}
+                  className="mt-2 text-slate-500 font-semibold hover:text-slate-700 transition text-xs flex items-center gap-1"
+                >
+                  &larr; Volver al inicio
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -280,10 +292,19 @@ const LoginScreen: React.FC<{
               <p className="text-sm text-slate-600">¿Ya tiene una cuenta?</p>
               <button
                 onClick={() => setIsRegister(false)}
-                className="text-cyan-600 font-semibold hover:text-cyan-800 transition"
+                className="text-cyan-600 font-semibold hover:text-cyan-800 transition text-sm"
               >
                 Volver al inicio de sesión
               </button>
+              {onBackToLanding && (
+                <button
+                  type="button"
+                  onClick={onBackToLanding}
+                  className="mt-2 text-slate-500 font-semibold hover:text-slate-700 transition text-xs flex items-center gap-1"
+                >
+                  &larr; Volver al inicio
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -485,10 +506,10 @@ const StandardSelection: React.FC<{
 
 
 // --- Main App Component ---
-type Step = 'dashboard' | 'standard_selection' | 'demographics' | 'questionnaire' | 'generating' | 'results' | 'history' | 'viewing_report';
+type Step = 'landing' | 'dashboard' | 'standard_selection' | 'demographics' | 'questionnaire' | 'generating' | 'results' | 'history' | 'viewing_report';
 
 const App: React.FC = () => {
-  const [step, setStep] = useState<Step>('dashboard');
+  const [step, setStep] = useState<Step>('landing');
   const [apiKey, setApiKey] = useState('');
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -616,6 +637,7 @@ const App: React.FC = () => {
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
+    setStep('landing');
   };
 
   useEffect(() => {
@@ -1113,9 +1135,21 @@ const App: React.FC = () => {
                     />
                 </div>
             ) : null;
-        default:
-            return null;
+        case 'landing':
+          return null;
+      default:
+          return null;
     }
+  }
+
+  if (step === 'landing') {
+    return (
+      <LandingPage
+        onEnterPlatform={() => setStep('dashboard')}
+        escudoSrc={EscudoUnicordoba}
+        isAuthenticated={isAuthenticated}
+      />
+    );
   }
 
   if (!isAuthenticated) {
@@ -1127,6 +1161,7 @@ const App: React.FC = () => {
         onPasswordChange={setLoginPassword}
         onSubmit={handleLoginSubmit}
         error={loginError}
+        onBackToLanding={() => setStep('landing')}
       />
     );
   }
@@ -1146,6 +1181,12 @@ const App: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setStep('landing')} 
+              className="rounded-lg bg-white border border-slate-300 text-slate-700 px-5 py-3 text-sm font-semibold hover:bg-slate-50 transition shadow-sm"
+            >
+              Info Proyecto
+            </button>
             {step !== 'dashboard' && (
               <button 
                 onClick={handleBackToDashboard} 
