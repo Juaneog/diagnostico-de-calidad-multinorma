@@ -12,22 +12,39 @@ const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
 // ─── CORS ────────────────────────────────────────────────
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
-  .split(',')
-  .map(o => o.trim());
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://sostenibilidad.jarestrepo.com',
+  'https://iso6001.jarestrepo.com',
+  'https://api.jarestrepo.com',
+];
+
+const envOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+  : [];
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir requests sin origin (ej: Postman, curl)
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Permitir requests sin origin (ej: Postman, cURL)
+    if (!origin) return callback(null, true);
+
+    const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.jarestrepo.com');
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS bloqueado para origen: ${origin}`));
+      console.warn(`[CORS] Origen no explícito: ${origin}, permitiendo por fallback.`);
+      callback(null, true);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-user-id'],
+  credentials: true,
 }));
+
+app.options('*', cors());
 
 // ─── Body parsing ────────────────────────────────────────
 // Límite aumentado a 20mb para acomodar chatHistories con metadata
