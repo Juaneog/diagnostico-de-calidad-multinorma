@@ -11,6 +11,22 @@ CREATE DATABASE IF NOT EXISTS diagnostico_calidad
 USE diagnostico_calidad;
 
 -- ----------------------------------------------------------
+-- Tabla: users
+-- Usuarios registrados en la plataforma
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  username      VARCHAR(100) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Usuario predeterminado 'user' / 'pass'
+INSERT INTO users (username, password_hash)
+VALUES ('user', 'pass')
+ON DUPLICATE KEY UPDATE username = VALUES(username);
+
+-- ----------------------------------------------------------
 -- Tabla: companies
 -- Datos demográficos por empresa/norma (clave compuesta)
 -- ----------------------------------------------------------

@@ -55,7 +55,41 @@ interface IBackendCompany {
   lastReportDate: string;
 }
 
-// ─── Funciones públicas ───────────────────────────────────────────────────────
+// ─── Funciones de Autenticación ──────────────────────────────────────────────
+
+/**
+ * Inicia sesión contra la API REST (MySQL).
+ */
+export const loginUser = async (username: string, password: string): Promise<{ ok: boolean; user?: { username: string }; error?: string }> => {
+  try {
+    const res = await apiFetch<{ ok: boolean; user: { username: string } }>(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+    return { ok: true, user: res.user };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error al iniciar sesión';
+    return { ok: false, error: message };
+  }
+};
+
+/**
+ * Registra un nuevo usuario en MySQL.
+ */
+export const registerUser = async (username: string, password: string): Promise<{ ok: boolean; user?: { username: string }; error?: string }> => {
+  try {
+    const res = await apiFetch<{ ok: boolean; user: { username: string } }>(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+    return { ok: true, user: res.user };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error al registrar usuario';
+    return { ok: false, error: message };
+  }
+};
+
+// ─── Funciones públicas de Diagnóstico ─────────────────────────────────────────
 
 /**
  * Obtiene la lista de empresas con su último diagnóstico filtrada por usuario.

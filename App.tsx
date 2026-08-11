@@ -140,7 +140,7 @@ const LoginScreen: React.FC<{
   const [regError, setRegError] = useState('');
   const [regSuccess, setRegSuccess] = useState('');
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
     setRegSuccess('');
@@ -160,38 +160,24 @@ const LoginScreen: React.FC<{
       return;
     }
 
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const usersStr = localStorage.getItem('diagnosticoRegisteredUsers') || '[]';
-      let users = [];
-      try {
-        users = JSON.parse(usersStr);
-      } catch (err) {
-        users = [];
+    try {
+      const res = await db.registerUser(regUsername.trim(), regPassword.trim());
+      if (res.ok) {
+        setRegSuccess('¡Usuario registrado con éxito en la base de datos! Ya puede iniciar sesión.');
+        onUsernameChange(regUsername.trim());
+        onPasswordChange('');
+        setRegUsername('');
+        setRegPassword('');
+        setRegConfirmPassword('');
+        setTimeout(() => {
+          setIsRegister(false);
+          setRegSuccess('');
+        }, 2000);
+      } else {
+        setRegError(res.error || 'Error al registrar el usuario.');
       }
-
-      if (!Array.isArray(users)) {
-        users = [];
-      }
-
-      if (users.some((u: any) => u.username === regUsername)) {
-        setRegError('El usuario ya existe.');
-        return;
-      }
-
-      users.push({ username: regUsername, password: regPassword });
-      localStorage.setItem('diagnosticoRegisteredUsers', JSON.stringify(users));
-      setRegSuccess('¡Usuario registrado con éxito! Ya puede iniciar sesión.');
-      
-      // Auto-fill username on login and clear form
-      onUsernameChange(regUsername);
-      onPasswordChange('');
-      setRegUsername('');
-      setRegPassword('');
-      setRegConfirmPassword('');
-      setTimeout(() => {
-        setIsRegister(false);
-        setRegSuccess('');
-      }, 2000);
+    } catch (err) {
+      setRegError('Ocurrió un error inesperado al registrar el usuario.');
     }
   };
 
@@ -610,35 +596,46 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLoginSubmit = () => {
-    let isValid = false;
-    if (loginUsername === AUTH_CREDENTIALS.username && loginPassword === AUTH_CREDENTIALS.password) {
-      isValid = true;
-    } else if (typeof window !== 'undefined' && window.localStorage) {
-      const usersStr = localStorage.getItem('diagnosticoRegisteredUsers');
-      if (usersStr) {
-        try {
-          const users = JSON.parse(usersStr);
-          if (Array.isArray(users)) {
-            const foundUser = users.find(u => u.username === loginUsername && u.password === loginPassword);
-            if (foundUser) {
-              isValid = true;
-            }
-          }
-        } catch (e) {
-          console.error('Error parsing registered users', e);
-        }
-      }
+  const handleLoginSubmit = async () => {
+    setLoginError('');
+    if (!loginUsername.trim() || !loginPassword.trim()) {
+      setLoginError('Por favor ingrese usuario y contraseña.');
+      return;
     }
 
-    if (isValid) {
-      setIsAuthenticated(true);
-      setLoginError('');
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+    try {
+      const res = await db.loginUser(loginUsername.trim(), loginPassword.trim());
+      if (res.ok) {
+        setIsAuthenticated(true);
+        setLoginError('');
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+          localStorage.setItem('diagnosticoActiveUsername', loginUsername.trim());
+        }
+      } else {
+        // Fallback local por defecto si la base de datos no estuviera disponible o fuera credencial por defecto
+        if (loginUsername.trim() === AUTH_CREDENTIALS.username && loginPassword.trim() === AUTH_CREDENTIALS.password) {
+          setIsAuthenticated(true);
+          setLoginError('');
+          if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+            localStorage.setItem('diagnosticoActiveUsername', 'user');
+          }
+        } else {
+          setLoginError(res.error || 'Usuario o contraseña incorrectos.');
+        }
       }
-    } else {
-      setLoginError('Usuario o contraseña incorrectos.');
+    } catch (err) {
+      if (loginUsername.trim() === AUTH_CREDENTIALS.username && loginPassword.trim() === AUTH_CREDENTIALS.password) {
+        setIsAuthenticated(true);
+        setLoginError('');
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+          localStorage.setItem('diagnosticoActiveUsername', 'user');
+        }
+      } else {
+        setLoginError('Error al conectar con el servidor de autenticación.');
+      }
     }
   };
 

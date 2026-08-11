@@ -6,6 +6,7 @@ const express = require('express');
 const cors = require('cors');
 
 const diagnosticsRouter = require('./routes/diagnostics');
+const authRouter = require('./routes/auth');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -43,6 +44,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 // ─── Routers ─────────────────────────────────────────────
+app.use('/api/auth', authRouter);
 app.use('/api', diagnosticsRouter);
 
 // ─── Error handler global ────────────────────────────────
