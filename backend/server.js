@@ -11,40 +11,23 @@ const authRouter = require('./routes/auth');
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-// ─── CORS ────────────────────────────────────────────────
-const defaultOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://sostenibilidad.jarestrepo.com',
-  'https://iso6001.jarestrepo.com',
-  'https://api.jarestrepo.com',
-];
+// ─── CORS Universal Middleware ───────────────────────────
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-user-id');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-const envOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
-  : [];
-
-const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permitir requests sin origin (ej: Postman, cURL)
-    if (!origin) return callback(null, true);
-
-    const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.jarestrepo.com');
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Origen no explícito: ${origin}, permitiendo por fallback.`);
-      callback(null, true);
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-user-id'],
-  credentials: true,
-}));
-
-app.options('*', cors());
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
 
 // ─── Body parsing ────────────────────────────────────────
 // Límite aumentado a 20mb para acomodar chatHistories con metadata
