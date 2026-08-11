@@ -10,8 +10,12 @@ import LandingPage from './components/LandingPage';
 import EscudoUnicordoba from './Escudo-unicordoba.png';
 import { generateActionPlan, generateChatResponse, generateActionPlanChatResponse, generateStandardChatResponse } from './services/aiService';
 import * as db from './services/dbService';
-import tutorialManualContent from './MANUAL_APP.md?raw';
-import sustainableManualContent from './MANUAL_NTC_6496_6503.md?raw';
+import guiaDeUsoContent from './GUIA_DE_USO.md?raw';
+import ntc6001Content from './MANUAL_NTC_6001.md?raw';
+import ntc6496Content from './MANUAL_NTC_6496_6503.md?raw';
+import appManualContent from './MANUAL_APP.md?raw';
+import InteractiveGuideModal from './components/InteractiveGuideModal';
+import GuidedTourOverlay from './components/GuidedTourOverlay';
 
 const APP_MODE = import.meta.env.VITE_APP_MODE || 'default';
 const API_KEY_STORAGE_KEYS: Record<string, string> = {
@@ -383,26 +387,32 @@ const Dashboard: React.FC<{
   companies: ICompanyListItem[],
   onNew: () => void,
   onViewHistory: (companyId: string) => void,
-  onOpenManualAll: () => void,
-  onOpenManualSustainable: () => void,
-  showSustainableManual: boolean,
-}> = ({ companies, onNew, onViewHistory, onOpenManualAll, onOpenManualSustainable, showSustainableManual }) => (
+  onOpenGuideModal: () => void,
+  onStartGuidedTour: () => void,
+}> = ({ companies, onNew, onViewHistory, onOpenGuideModal, onStartGuidedTour }) => (
     <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg animate-fade-in border border-gray-200">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 mb-6 gap-4">
             <div>
               <h2 className="text-3xl font-bold text-gray-800">Panel de Diagnósticos</h2>
               <p className="text-sm text-gray-500 mt-2">Accede a tus diagnósticos guardados o crea uno nuevo.</p>
             </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <button onClick={onOpenManualAll} className="bg-slate-100 text-slate-800 font-semibold py-2.5 px-5 rounded-lg hover:bg-slate-200 transition-colors shadow-sm">
-                Tutorial de manejo de la aplicación
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5">
+              <button 
+                onClick={onOpenGuideModal} 
+                className="bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm flex items-center gap-2 text-xs sm:text-sm"
+              >
+                <span>📖</span> Guía de Uso & Manuales
               </button>
-              {showSustainableManual && (
-                <button onClick={onOpenManualSustainable} className="bg-slate-100 text-slate-800 font-semibold py-2.5 px-5 rounded-lg hover:bg-slate-200 transition-colors shadow-sm text-center leading-tight">
-                  Manual NTC<br />6496/6503
-                </button>
-              )}
-              <button onClick={onNew} className="bg-cyan-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-cyan-700 transition-colors shadow-sm hover:shadow-md">
+              <button 
+                onClick={onStartGuidedTour} 
+                className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2.5 px-4 rounded-xl transition-all shadow-sm flex items-center gap-1.5 text-xs sm:text-sm"
+              >
+                <span>🚀</span> Tour Guiado
+              </button>
+              <button 
+                onClick={onNew} 
+                className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md hover:shadow-lg text-xs sm:text-sm"
+              >
                 + Nuevo Diagnóstico
               </button>
             </div>
@@ -547,8 +557,8 @@ const App: React.FC = () => {
   const [chatHistory, setChatHistory] = useState<IChatMessage[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [chatHistories, setChatHistories] = useState<ChatHistories>({});
-  type ManualView = 'all' | 'sustainable' | null;
-  const [manualView, setManualView] = useState<ManualView>(null);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
   // Standard Detail Modal state
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -678,16 +688,20 @@ const App: React.FC = () => {
       setStep('dashboard');
   }
 
-  const handleOpenManual = () => {
-      setManualView('all');
+  const handleOpenGuideModal = () => {
+      setIsGuideModalOpen(true);
   };
 
-  const handleOpenManualSustainable = () => {
-      setManualView('sustainable');
+  const handleCloseGuideModal = () => {
+      setIsGuideModalOpen(false);
   };
 
-  const handleCloseManual = () => {
-      setManualView(null);
+  const handleStartGuidedTour = () => {
+      setIsTourOpen(true);
+  };
+
+  const handleCloseGuidedTour = () => {
+      setIsTourOpen(false);
   };
 
   const handleStandardSelect = (standard: IsoStandard) => {
@@ -1080,7 +1094,7 @@ const App: React.FC = () => {
   const renderStep = () => {
     switch(step) {
       case 'dashboard':
-          return <Dashboard companies={companies} onNew={handleStartNew} onViewHistory={handleViewHistory} onOpenManualAll={handleOpenManual} onOpenManualSustainable={handleOpenManualSustainable} showSustainableManual={true} />;
+          return <Dashboard companies={companies} onNew={handleStartNew} onViewHistory={handleViewHistory} onOpenGuideModal={handleOpenGuideModal} onStartGuidedTour={handleStartGuidedTour} />;
       case 'standard_selection':
           return <StandardSelection 
                     onSelect={handleStandardSelect} 
@@ -1182,20 +1196,26 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <button 
+              onClick={handleOpenGuideModal} 
+              className="rounded-lg bg-cyan-600 text-white px-4 py-3 text-sm font-bold hover:bg-cyan-700 transition shadow-md flex items-center gap-2"
+            >
+              <span>📖</span> Guía de Uso & Manuales
+            </button>
+            <button 
               onClick={() => setStep('landing')} 
-              className="rounded-lg bg-white border border-slate-300 text-slate-700 px-5 py-3 text-sm font-semibold hover:bg-slate-50 transition shadow-sm"
+              className="rounded-lg bg-white border border-slate-300 text-slate-700 px-4 py-3 text-sm font-semibold hover:bg-slate-50 transition shadow-sm"
             >
               Info Proyecto
             </button>
             {step !== 'dashboard' && (
               <button 
                 onClick={handleBackToDashboard} 
-                className="rounded-lg bg-cyan-600 text-white px-5 py-3 text-sm font-semibold hover:bg-cyan-700 transition shadow-sm"
+                className="rounded-lg bg-slate-800 text-white px-4 py-3 text-sm font-semibold hover:bg-slate-700 transition shadow-sm"
               >
                 Volver al Panel
               </button>
             )}
-            <button onClick={handleLogout} className="rounded-lg bg-slate-900 text-white px-5 py-3 text-sm font-semibold hover:bg-slate-800 transition">
+            <button onClick={handleLogout} className="rounded-lg bg-slate-900 text-white px-4 py-3 text-sm font-semibold hover:bg-slate-800 transition">
               Cerrar sesión
             </button>
           </div>
@@ -1243,89 +1263,36 @@ const App: React.FC = () => {
             />
         )}
 
-       {manualView && (
-            <StandardDetailModal
-                isOpen={Boolean(manualView)}
-                onClose={handleCloseManual}
-                title={manualView === 'all' ? 'Tutorial de manejo de la aplicación' : 'Manual NTC 6496/6503'}
-                contentHTML={
-                  manualView === 'all'
-                    ? markdownToHtml(tutorialManualContent)
-                    : `
-                      <style>
-                        .manual-container h1, .manual-container h2, .manual-container h3, .manual-container h4 {
-                          font-family: 'Poppins', sans-serif;
-                          font-weight: 700;
-                          color: #0e7490;
-                          margin-top: 1.5rem;
-                          margin-bottom: 0.75rem;
-                        }
-                        .manual-container h1 { font-size: 1.75rem; border-b: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 0; }
-                        .manual-container h2 { font-size: 1.5rem; border-b: 1px solid #f1f5f9; padding-bottom: 0.25rem; }
-                        .manual-container h3 { font-size: 1.25rem; }
-                        .manual-container p { margin-bottom: 1rem; color: #475569; line-height: 1.6; }
-                        .manual-container ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
-                        .manual-container ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
-                        .manual-container li { margin-bottom: 0.35rem; color: #475569; }
-                        .manual-container hr { margin: 2rem 0; border: 0; border-top: 1px solid #e2e8f0; }
-                        .manual-container strong { font-weight: 600; color: #0f172a; }
-                        .manual-container blockquote {
-                          border-left: 4px solid #0e7490;
-                          background-color: #f8fafc;
-                          padding: 0.75rem 1rem;
-                          margin-bottom: 1rem;
-                          font-style: italic;
-                        }
-                      </style>
-                      <div class="manual-container animate-fade-in">
-                        <div class="mb-8 p-6 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-2xl border border-cyan-100 shadow-sm">
-                          <h2 class="text-2xl font-bold text-cyan-800 mb-4 mt-0">Componentes de las Normas de Sostenibilidad</h2>
-                          <div class="grid md:grid-cols-2 gap-6">
-                            <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-                              <h3 class="text-xl font-bold text-teal-700 mt-0 mb-2">NTC 6496: Gastronomía Sostenible</h3>
-                              <p class="text-sm text-slate-600 mb-4">Requisitos en dimensiones ambiental, sociocultural y económica para el sector gastronómico.</p>
-                              <div class="space-y-3">
-                                <div class="flex gap-2">
-                                  <span class="text-teal-600 font-bold">🌿</span>
-                                  <p class="text-xs text-slate-700 m-0"><strong>Dimensión Ambiental:</strong> Ahorro de agua y energía, gestión de residuos orgánicos, compras sostenibles.</p>
-                                </div>
-                                <div class="flex gap-2">
-                                  <span class="text-teal-600 font-bold">🤝</span>
-                                  <p class="text-xs text-slate-700 m-0"><strong>Dimensión Sociocultural:</strong> Empleo local, condiciones laborales justas, preservación del patrimonio gastronómico.</p>
-                                </div>
-                                <div class="flex gap-2">
-                                  <span class="text-teal-600 font-bold">📈</span>
-                                  <p class="text-xs text-slate-700 m-0"><strong>Dimensión Económica:</strong> Rentabilidad del negocio, calidad de servicio y seguridad alimentaria.</p>
-                                </div>
-                              </div>
-                            </div>
-                            <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-                              <h3 class="text-xl font-bold text-teal-700 mt-0 mb-2">NTC 6503: Turismo Sostenible</h3>
-                              <p class="text-sm text-slate-600 mb-4">Requisitos de sostenibilidad para establecimientos de alojamiento y hospedaje.</p>
-                              <div class="space-y-3">
-                                <div class="flex gap-2">
-                                  <span class="text-teal-600 font-bold">🌊</span>
-                                  <p class="text-xs text-slate-700 m-0"><strong>Requisitos Ambientales:</strong> Eficiencia energética y de agua, gestión integral de residuos (peligrosos).</p>
-                                </div>
-                                <div class="flex gap-2">
-                                  <span class="text-teal-600 font-bold">🎭</span>
-                                  <p class="text-xs text-slate-700 m-0"><strong>Requisitos Socioculturales:</strong> Fomento de cultura local, capacitación en sostenibilidad, empleo a comunidades locales.</p>
-                                </div>
-                                <div class="flex gap-2">
-                                  <span class="text-teal-600 font-bold">💼</span>
-                                  <p class="text-xs text-slate-700 m-0"><strong>Gestión Sostenible:</strong> Políticas de compras verdes, monitoreo de huella de carbono, satisfacción del huésped.</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <hr />
-                        ${markdownToHtml(sustainableManualContent)}
-                      </div>
-                    `
-                }
-            />
-        )}
+       {/* Floating Help Button on Bottom-Right */}
+       <button
+         onClick={handleOpenGuideModal}
+         className="fixed bottom-6 right-6 bg-gradient-to-r from-cyan-600 to-teal-600 text-white p-4 rounded-full shadow-2xl hover:from-cyan-700 hover:to-teal-700 transition-all transform hover:scale-110 z-40 flex items-center justify-center gap-2 font-bold text-xs group print:hidden"
+         title="Abrir Guía de Uso e Instrucciones"
+       >
+         <span className="text-xl">📖</span>
+         <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap">
+           Guía de Uso
+         </span>
+       </button>
+
+       {isGuideModalOpen && (
+         <InteractiveGuideModal
+           isOpen={isGuideModalOpen}
+           onClose={handleCloseGuideModal}
+           guiaDeUsoContent={guiaDeUsoContent}
+           ntc6001Content={ntc6001Content}
+           ntc6496Content={ntc6496Content}
+           appManualContent={appManualContent}
+           onStartGuidedTour={handleStartGuidedTour}
+         />
+       )}
+
+       {isTourOpen && (
+         <GuidedTourOverlay
+           isOpen={isTourOpen}
+           onClose={handleCloseGuidedTour}
+         />
+       )}
     </div>
   );
 };
