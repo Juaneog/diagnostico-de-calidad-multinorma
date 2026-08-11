@@ -58,12 +58,13 @@ interface IBackendCompany {
 // ─── Funciones públicas ───────────────────────────────────────────────────────
 
 /**
- * Obtiene la lista de empresas con su último diagnóstico.
+ * Obtiene la lista de empresas con su último diagnóstico filtrada por usuario.
  * Usado por el Dashboard.
  */
-export const getCompanyList = async (): Promise<ICompanyListItem[]> => {
+export const getCompanyList = async (userId: string = 'user'): Promise<ICompanyListItem[]> => {
   try {
-    const companies = await apiFetch<IBackendCompany[]>(`${API_BASE}/companies`);
+    const params = new URLSearchParams({ userId });
+    const companies = await apiFetch<IBackendCompany[]>(`${API_BASE}/companies?${params}`);
     return companies.map(c => ({
       companyId: c.companyId,
       companyName: c.companyName,
@@ -79,12 +80,13 @@ export const getCompanyList = async (): Promise<ICompanyListItem[]> => {
 };
 
 /**
- * Obtiene todos los diagnósticos de una empresa.
+ * Obtiene todos los diagnósticos de una empresa pertenecientes al usuario.
  * Usado por HistoryView.
  */
-export const getCompanyHistory = async (companyId: string): Promise<ISavedDiagnostic[]> => {
+export const getCompanyHistory = async (companyId: string, userId: string = 'user'): Promise<ISavedDiagnostic[]> => {
   try {
-    return await apiFetch<ISavedDiagnostic[]>(`${API_BASE}/companies/${encodeURIComponent(companyId)}/history`);
+    const params = new URLSearchParams({ userId });
+    return await apiFetch<ISavedDiagnostic[]>(`${API_BASE}/companies/${encodeURIComponent(companyId)}/history?${params}`);
   } catch (err) {
     console.error('[dbService] getCompanyHistory:', err);
     return [];
@@ -92,15 +94,16 @@ export const getCompanyHistory = async (companyId: string): Promise<ISavedDiagno
 };
 
 /**
- * Obtiene el diagnóstico más reciente de una empresa para una norma específica.
+ * Obtiene el diagnóstico más reciente de una empresa para una norma específica y usuario.
  * Usado para mostrar comparaciones en DemographicsForm.
  */
 export const getLatestDiagnostic = async (
   companyId: string,
-  standard: IsoStandard
+  standard: IsoStandard,
+  userId: string = 'user'
 ): Promise<ISavedDiagnostic | null> => {
   try {
-    const params = new URLSearchParams({ companyId, standard });
+    const params = new URLSearchParams({ companyId, standard, userId });
     return await apiFetch<ISavedDiagnostic | null>(`${API_BASE}/diagnostics/latest?${params}`);
   } catch (err) {
     console.error('[dbService] getLatestDiagnostic:', err);
@@ -109,7 +112,7 @@ export const getLatestDiagnostic = async (
 };
 
 /**
- * Guarda un diagnóstico completo en MySQL.
+ * Guarda un diagnóstico completo en MySQL asociándolo al userId.
  * Devuelve el ID generado por el servidor.
  */
 export const saveDiagnostic = async (
@@ -117,12 +120,13 @@ export const saveDiagnostic = async (
   results: IResults,
   comments: CommentsState,
   checklistAnswers: ChecklistAnswersState,
-  chatHistories: ChatHistories
+  chatHistories: ChatHistories,
+  userId: string = 'user'
 ): Promise<{ id: string; savedAt: string } | null> => {
   try {
     return await apiFetch<{ id: string; savedAt: string }>(`${API_BASE}/diagnostics`, {
       method: 'POST',
-      body: JSON.stringify({ demographics, results, comments, checklistAnswers, chatHistories }),
+      body: JSON.stringify({ demographics, results, comments, checklistAnswers, chatHistories, userId }),
     });
   } catch (err) {
     console.error('[dbService] saveDiagnostic:', err);

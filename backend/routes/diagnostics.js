@@ -100,9 +100,10 @@ async function buildFullDiagnostic(conn, diagnosticRow) {
 
 // ─────────────────────────────────────────────────────────
 // GET /api/companies
-// Lista de empresas con último diagnóstico (para el Dashboard)
+// Lista de empresas con último diagnóstico para el usuario activo (para el Dashboard)
 // ─────────────────────────────────────────────────────────
 router.get('/companies', async (req, res) => {
+  const userId = req.query.userId || req.headers['x-user-id'] || 'user';
   try {
     const [rows] = await pool.execute(`
       SELECT
@@ -113,10 +114,11 @@ router.get('/companies', async (req, res) => {
         MAX(d.saved_at)        AS last_report_date
       FROM companies c
       LEFT JOIN diagnostics d
-        ON d.company_id = c.company_id AND d.standard = c.standard
+        ON d.company_id = c.company_id AND d.standard = c.standard AND (d.user_id = ? OR d.user_id IS NULL)
+      WHERE (c.user_id = ? OR c.user_id IS NULL)
       GROUP BY c.company_id, c.standard
       ORDER BY last_report_date DESC
-    `);
+    `, [userId, userId]);
 
     const companies = rows.map(r => ({
       companyId: r.company_id,
@@ -136,15 +138,16 @@ router.get('/companies', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────
 // GET /api/companies/:companyId/history
-// Historial de diagnósticos de una empresa (todos sus standards)
+// Historial de diagnósticos de una empresa filtrado por usuario
 // ─────────────────────────────────────────────────────────
 router.get('/companies/:companyId/history', async (req, res) => {
   const { companyId } = req.params;
+  const userId = req.query.userId || req.headers['x-user-id'] || 'user';
   const conn = await pool.getConnection();
   try {
     const [diagRows] = await conn.execute(
-      'SELECT * FROM diagnostics WHERE company_id = ? ORDER BY saved_at DESC',
-      [companyId]
+      'SELECT * FROM diagnostics WHERE company_id = ? AND (user_id = ? OR user_id IS NULL) ORDER BY saved_at DESC',
+      [companyId, userId]
     );
 
     const results = [];
@@ -162,11 +165,13 @@ router.get('/companies/:companyId/history', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────
-// GET /api/diagnostics/latest?companyId=X&standard=Y
-// Último diagnóstico de una empresa para una norma dada
+// GET /api/diagnostics/latest?companyId=X&standard=Y&userId=Z
+// Último diagnóstico de una empresa para una norma dada y usuario
 // ─────────────────────────────────────────────────────────
 router.get('/diagnostics/latest', async (req, res) => {
-  const { companyId, standard } = req.query;
+  const { companyId, standard, userId: queryUserId } = req.query;
+  const userId = queryUserId || req.headers['x-user-id'] || 'user';
+
   if (!companyId || !standard) {
     return res.status(400).json({ error: 'companyId y standard son requeridos' });
   }
@@ -175,9 +180,9 @@ router.get('/diagnostics/latest', async (req, res) => {
   try {
     const [rows] = await conn.execute(
       `SELECT * FROM diagnostics
-       WHERE company_id = ? AND standard = ?
+       WHERE company_id = ? AND standard = ? AND (user_id = ? OR user_id IS NULL)
        ORDER BY saved_at DESC LIMIT 1`,
-      [companyId, standard]
+      [companyId, standard, userId]
     );
 
     if (rows.length === 0) return res.json(null);
@@ -213,11 +218,12 @@ router.get('/diagnostics/:id', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────
 // POST /api/diagnostics
-// Guardar un nuevo diagnóstico completo
-// Body: { demographics, results, comments, checklistAnswers, chatHistories }
+// Guardar un nuevo diagnóstico completo con user_id
+// Body: { demographics, results, comments, checklistAnswers, chatHistories, userId }
 // ─────────────────────────────────────────────────────────
 router.post('/diagnostics', async (req, res) => {
-  const { demographics, results, comments, checklistAnswers, chatHistories } = req.body;
+  const { demographics, results, comments, checklistAnswers, chatHistories, userId: bodyUserId } = req.body;
+  const userId = bodyUserId || demographics?.userId || req.headers['x-user-id'] || 'user';
 
   if (!demographics || !results) {
     return res.status(400).json({ error: 'demographics y results son requeridos' });
@@ -232,11 +238,11 @@ router.post('/diagnostics', async (req, res) => {
       companySize, foundationDate, responsiblePerson, standard
     } = demographics;
 
-    // 1. Upsert empresa
+    // 1. Upsert empresa con user_id
     await conn.execute(
       `INSERT INTO companies
-         (company_id, standard, company_name, industry, department, city, company_size, foundation_date, responsible_person)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         (company_id, standard, company_name, industry, department, city, company_size, foundation_date, responsible_person, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          company_name       = VALUES(company_name),
          industry           = VALUES(industry),
@@ -244,18 +250,19 @@ router.post('/diagnostics', async (req, res) => {
          city               = VALUES(city),
          company_size       = VALUES(company_size),
          foundation_date    = VALUES(foundation_date),
-         responsible_person = VALUES(responsible_person)`,
-      [companyId, standard, companyName, industry, department, city, companySize, foundationDate, responsiblePerson]
+         responsible_person = VALUES(responsible_person),
+         user_id            = VALUES(user_id)`,
+      [companyId, standard, companyName, industry, department, city, companySize, foundationDate, responsiblePerson, userId]
     );
 
-    // 2. Insertar diagnóstico
+    // 2. Insertar diagnóstico con user_id
     const diagId = `diag_${Date.now()}`;
     const { reportDate, totalPercentage, clauseScores, actionPlan, comparison } = results;
 
     await conn.execute(
       `INSERT INTO diagnostics
-         (id, company_id, standard, report_date, total_percentage, clause_scores, comparison_data)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (id, company_id, standard, report_date, total_percentage, clause_scores, comparison_data, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         diagId,
         companyId,
@@ -264,6 +271,7 @@ router.post('/diagnostics', async (req, res) => {
         totalPercentage || 0,
         JSON.stringify(clauseScores || []),
         comparison ? JSON.stringify(comparison) : null,
+        userId
       ]
     );
 

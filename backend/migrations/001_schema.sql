@@ -17,6 +17,7 @@ USE diagnostico_calidad;
 CREATE TABLE IF NOT EXISTS companies (
   company_id         VARCHAR(100)                            NOT NULL,
   standard           VARCHAR(50)                             NOT NULL,
+  user_id            VARCHAR(100)                            NOT NULL DEFAULT 'user',
   company_name       VARCHAR(255)                            NOT NULL,
   industry           VARCHAR(255)                            DEFAULT NULL,
   department         VARCHAR(100)                            DEFAULT NULL,
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS diagnostics (
   id               VARCHAR(50)    NOT NULL,
   company_id       VARCHAR(100)   NOT NULL,
   standard         VARCHAR(50)    NOT NULL,
+  user_id          VARCHAR(100)   NOT NULL DEFAULT 'user',
   saved_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
   report_date      VARCHAR(50)    DEFAULT NULL,
   total_percentage DECIMAL(6,3)   DEFAULT NULL,

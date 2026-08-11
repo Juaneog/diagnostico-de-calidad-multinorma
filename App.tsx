@@ -653,9 +653,9 @@ const App: React.FC = () => {
   useEffect(() => {
     // Load initial data from db (async)
     if (step === 'dashboard') {
-        db.getCompanyList().then(list => setCompanies(list));
+        db.getCompanyList(loginUsername || 'user').then(list => setCompanies(list));
     }
-  }, [step]);
+  }, [step, loginUsername]);
   
   const resetQuestionnaireState = () => {
     setDemographics(null);
@@ -711,7 +711,7 @@ const App: React.FC = () => {
   };
 
   const handleViewHistory = async (companyId: string) => {
-    const history = await db.getCompanyHistory(companyId);
+    const history = await db.getCompanyHistory(companyId, loginUsername || 'user');
     setCurrentHistory(history);
     setStep('history');
   }
@@ -724,7 +724,7 @@ const App: React.FC = () => {
 
   const handleDemographicsSubmit = async (data: IDemographics) => {
     setDemographics(data);
-    const previousReport = await db.getLatestDiagnostic(data.companyId, data.standard);
+    const previousReport = await db.getLatestDiagnostic(data.companyId, data.standard, loginUsername || 'user');
     setPreviousDiagnosticForComparison(previousReport);
     setIsContinuingLastDiagnostic(false);
     // Explicitly reset for a completely new report
@@ -875,7 +875,7 @@ const App: React.FC = () => {
       setIsSaving(true);
       setError(null);
       try {
-          const res = await db.saveDiagnostic(demographics, results, comments, checklistAnswers, chatHistories);
+          const res = await db.saveDiagnostic(demographics, results, comments, checklistAnswers, chatHistories, loginUsername || 'user');
           if (res) {
               resetQuestionnaireState();
               setStep('dashboard');
