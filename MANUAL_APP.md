@@ -222,7 +222,7 @@ app.use((req, res, next) => {
 
 ## 8. DISEÑO DE BASE DE DATOS Y ESQUEMA RELACIONAL (MYSQL)
 
-La base de datos MySQL en Hostinger (`u683618217_sostenibilidad`) se compone de 3 tablas relacionales:
+La base de datos MySQL (configurable mediante las variables de entorno en `backend/.env`, ver `backend/environment.example`) se compone de 3 tablas relacionales principales:
 
 ### 8.1 Tabla `users`
 ```sql

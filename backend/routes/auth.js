@@ -99,10 +99,6 @@ router.post('/login', async (req, res) => {
     if (rows.length > 0) {
       foundUser = rows[0];
       isValid = verifyPassword(password, foundUser.password_hash);
-    } else if (cleanUsername === 'user' && password === 'pass') {
-      // Fallback predeterminado si 'user' aún no se ha sembrado en MySQL
-      isValid = true;
-      foundUser = { username: 'user' };
     }
 
     if (!isValid) {

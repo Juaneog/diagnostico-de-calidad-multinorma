@@ -29,7 +29,6 @@ const getModeLabel = (): string => {
 };
 
 const AUTH_STORAGE_KEY = 'diagnosticoAuthenticated';
-const AUTH_CREDENTIALS = { username: 'user', password: 'pass' };
 
 const markdownToHtml = (markdown: string): string => {
   const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -613,29 +612,10 @@ const App: React.FC = () => {
           localStorage.setItem('diagnosticoActiveUsername', loginUsername.trim());
         }
       } else {
-        // Fallback local por defecto si la base de datos no estuviera disponible o fuera credencial por defecto
-        if (loginUsername.trim() === AUTH_CREDENTIALS.username && loginPassword.trim() === AUTH_CREDENTIALS.password) {
-          setIsAuthenticated(true);
-          setLoginError('');
-          if (typeof window !== 'undefined' && window.localStorage) {
-            localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-            localStorage.setItem('diagnosticoActiveUsername', 'user');
-          }
-        } else {
-          setLoginError(res.error || 'Usuario o contraseña incorrectos.');
-        }
+        setLoginError(res.error || 'Usuario o contraseña incorrectos.');
       }
     } catch (err) {
-      if (loginUsername.trim() === AUTH_CREDENTIALS.username && loginPassword.trim() === AUTH_CREDENTIALS.password) {
-        setIsAuthenticated(true);
-        setLoginError('');
-        if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-          localStorage.setItem('diagnosticoActiveUsername', 'user');
-        }
-      } else {
-        setLoginError('Error al conectar con el servidor de autenticación.');
-      }
+      setLoginError('Error al conectar con el servidor de autenticación.');
     }
   };
 

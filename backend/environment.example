@@ -1,0 +1,17 @@
+# Configuración del servidor backend
+# Copiar este archivo como .env y completar los valores
+
+# --- Base de datos MySQL ---
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=diagnostico_calidad
+
+# --- Servidor Express ---
+PORT=3001
+
+# --- CORS (orígenes permitidos separados por comas) ---
+# En desarrollo: http://localhost:5173
+# En producción: la URL del servidor donde esté desplegado el frontend
+CORS_ORIGINS=http://localhost:5173

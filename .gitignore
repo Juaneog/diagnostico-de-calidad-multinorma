@@ -15,6 +15,13 @@ dist-ssr
 *.local
 *.zip
 
+# Variables de entorno con credenciales (usar environment.example como plantilla)
+.env
+backend/.env
+
+# Repositorios publicos independientes (cada uno con su propio .git)
+repos-publicos/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
