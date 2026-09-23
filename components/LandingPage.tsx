@@ -2,11 +2,12 @@ import React from 'react';
 
 interface LandingPageProps {
   onEnterPlatform: () => void;
+  onOpenGuideModal?: () => void;
   escudoSrc: string;
   isAuthenticated: boolean;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onEnterPlatform, escudoSrc, isAuthenticated }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onEnterPlatform, onOpenGuideModal, escudoSrc, isAuthenticated }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-950 to-slate-950 text-white relative overflow-hidden flex flex-col justify-between">
       {/* Decorative background glow circles */}
@@ -28,7 +29,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnterPlatform, escudoSrc, i
             <p className="text-[10px] text-slate-400 font-medium">Departamento de Córdoba, Colombia</p>
           </div>
         </div>
-        <div>
+        <div className="flex items-center gap-3">
+          {onOpenGuideModal && (
+            <button
+              onClick={onOpenGuideModal}
+              className="px-4 py-2.5 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/40 text-cyan-200 transition-all font-semibold text-sm backdrop-blur-sm shadow-md hover:shadow-lg flex items-center gap-2 transform hover:-translate-y-0.5"
+              title="Abrir Guía de Uso y Manuales"
+            >
+              <span>📖</span>
+              <span className="hidden sm:inline">Guía & Manuales</span>
+            </button>
+          )}
           <button
             onClick={onEnterPlatform}
             className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 hover:border-white/40 transition-all font-semibold text-sm backdrop-blur-sm shadow-md hover:shadow-lg flex items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0"
